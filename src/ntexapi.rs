@@ -1,5 +1,7 @@
 #[allow(deprecated)] //fixme
 use core::mem::uninitialized;
+#[cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
+use core::ptr::addr_of;
 use core::ptr::read_volatile;
 #[cfg(target_arch = "x86")]
 use core::sync::atomic::spin_loop_hint;
@@ -2782,7 +2784,7 @@ pub unsafe fn NtGetTickCount64() -> ULONGLONG {
     #[allow(deprecated)] //fixme
     let mut tick_count: ULARGE_INTEGER = uninitialized();
     #[cfg(any(target_arch = "x86_64", target_arch = "aarch64"))] {
-        *tick_count.QuadPart_mut() = read_volatile(&(*USER_SHARED_DATA).u.TickCountQuad);
+        *tick_count.QuadPart_mut() = read_volatile(addr_of!((*USER_SHARED_DATA).u.TickCountQuad));
     }
     #[cfg(target_arch = "x86")] {
         loop {
@@ -2806,7 +2808,7 @@ pub unsafe fn NtGetTickCount64() -> ULONGLONG {
 #[inline]
 pub unsafe fn NtGetTickCount() -> ULONG {
     #[cfg(any(target_arch = "x86_64", target_arch = "aarch64"))] {
-        ((read_volatile(&(*USER_SHARED_DATA).u.TickCountQuad)
+        ((read_volatile(addr_of!((*USER_SHARED_DATA).u.TickCountQuad))
             * (*USER_SHARED_DATA).TickCountMultiplier as u64) >> 24) as u32
     }
     #[cfg(target_arch = "x86")] {
